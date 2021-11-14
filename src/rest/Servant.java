@@ -24,7 +24,10 @@ public class Servant {
             stringBuilder.append("+".repeat(putIndex - takeIndex));
             stringBuilder.append(".".repeat(buffer.length - putIndex));
         }
-        stringBuilder.append(']').append("  current size:").append(currentSize);
+        stringBuilder
+                .append(']').append("  current size:").append(currentSize)
+                .append(", putIndex: ").append(putIndex)
+                .append(", take index: ").append(takeIndex);
 
         return stringBuilder.toString();
     }
@@ -45,7 +48,7 @@ public class Servant {
         putIndex = (putIndex + data.length) % buffer.length;
         currentSize += data.length;
 
-        printBufferState();
+//        printBufferState();
     }
 
     public int[] takeData(int size) {
@@ -55,7 +58,7 @@ public class Servant {
         takeIndex = (takeIndex + size) % buffer.length;
         currentSize -= size;
 
-        printBufferState();
+//        printBufferState();
         return data;
     }
 

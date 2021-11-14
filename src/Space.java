@@ -1,8 +1,5 @@
 
-import rest.Future;
-import rest.Proxy;
-import rest.Scheduler;
-import rest.Servant;
+import rest.*;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
@@ -61,16 +58,15 @@ public class Space {
 
                     if (role.equals("producer")) {
                         data = genRandData();
-                        System.out.println(Arrays.toString(data));
+                        System.out.println("producer " + index + " size: " + data.length + " " + Arrays.toString(data));
                         Future<int[]> future = proxy.putData(data);
-                        System.out.println("producer " + index + " size: " + data.length);
-                        future.waitForResult();
-                        System.out.println("producer " + index + " :: done");
+//                        future.waitForResult();
+//                        System.out.println("producer " + index + " :: done");
 
                     } else if (role.equals("consumer")) {
                         size = getRandSize();
-                        Future<int[]> future = proxy.takeData(size);
                         System.out.println("consumer " + index + " size: " + size);
+                        Future<int[]> future = proxy.takeData(size);
                         data = future.get();
                         System.out.println("consumer " + index + " :: " + Arrays.toString(data));
 
@@ -85,6 +81,9 @@ public class Space {
         }
     }
 
+    static private int producersNumb;
+    static private int consumersNumb;
+    static private int bufferSize;
 
     static private final PseudoCond pseudoCond = new PseudoCond();
     static private int dataSizeUpperBound_1;
@@ -96,15 +95,21 @@ public class Space {
     static private int workersDelay;
     static private int alterPoint = Integer.MAX_VALUE;
 
+    static private Servant servant;
+    static private Scheduler scheduler;
+    static private Proxy proxy;
+    static private ActivationQueue activationQueue;
+
+
     public static void main(String[] args) {
 
         /*
          * set of parameters
          * */
 
-        int producersNumb = 2;
-        int consumersNumb = 2;
-        int bufferSize = 100;
+        producersNumb = 250;
+        consumersNumb = 250;
+        bufferSize = 100;
         dataSizeUpperBound_1 = 40;
         dataSizeLowerBound_1 = 1;
 
@@ -117,13 +122,14 @@ public class Space {
         workersDelay = 1;
         String filePath = "log1.txt";
 
-        Scheduler scheduler = new Scheduler();
-        Servant servant = new Servant(bufferSize);
-        Proxy proxy = new Proxy(servant);
-
         /**
          * end of set of parameters
          * */
+
+        servant = new Servant(bufferSize);
+        scheduler = new Scheduler();
+        proxy = new Proxy(servant, scheduler);
+        activationQueue = scheduler.getTasksQueue();
 
 
         Worker[] producers = initWorkers(producersNumb, "producer", proxy);
@@ -165,37 +171,16 @@ public class Space {
                     pseudoCond.stop = false;
                     pseudoCond.notifyAll_();
                     break;
-                case "state":
-                    System.out.println("not implemented");
+                case "queues":
+                    System.out.println(activationQueue.getState());
                     break;
-
+                case "state":
+                    System.out.println(servant.toStringBufferState());
+                    break;
             }
         }
     }
 
-    static private int getTail(String[] commandAndParams) {
-        int tail = 10;
-        try {
-            if (commandAndParams.length > 1) {
-                tail = Integer.parseInt(commandAndParams[1]);
-            }
-        } catch (NumberFormatException e) {
-            e.printStackTrace();
-            System.out.println("program is still working");
-        }
-        return tail;
-    }
-
-    private static String dataToString(int[] data) {
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append('[');
-        for (int a : data) {
-            stringBuilder.append(a);
-            stringBuilder.append(", ");
-        }
-        stringBuilder.append(']');
-        return stringBuilder.toString();
-    }
 
     private static Worker[] initWorkers(int n, String role, Proxy proxy) {
         Worker[] workers = new Worker[n];

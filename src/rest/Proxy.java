@@ -12,8 +12,8 @@ public class Proxy {
         PUT, TAKE
     };
 
-    public Proxy(Servant servant) {
-        scheduler = new Scheduler();
+    public Proxy(Servant servant, Scheduler scheduler) {
+        this.scheduler = scheduler;
         this.servant = servant;
     }
 

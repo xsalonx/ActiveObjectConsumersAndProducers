@@ -11,7 +11,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import rest.Proxy.reqTypes;
 
 public class ActivationQueue {
-    static private final int oneQueueSizeBound = 256;
+    static private final int oneQueueSizeBound = 512;
     private final reqTypes[] types;
     private final HashMap<String, Integer> typeToIndex;
     private final HashMap<String, LinkedList<MethodRequest>> tasksQueues;
@@ -48,65 +48,58 @@ public class ActivationQueue {
         return stringBuilder.toString();
     }
 
-    public MethodRequest dequeue() {
+    public MethodRequest checkAndDequeue() {
         lock.lock();
         int i = 0;
         MethodRequest mr;
+        String type;
         while (true) {
             while (i < types.length) {
-                if (!tasksQueues.get(types[(currentToDequeueIndex + i) % types.length].name()).isEmpty()) {
-                    mr = tasksQueues.get(types[(currentToDequeueIndex + i) % types.length].name()).pop();
-                    typeToCond.get(mr.getType()).signal();
-                    currentToDequeueIndex += (i + 1);
-                    currentToDequeueIndex %= types.length;
-                    lock.unlock();
-                    return mr;
+//                System.out.println("checkAndDequeue: i=" + i + " currI: " + currentToDequeueIndex + "  actQ" + getState());
+                type = types[(currentToDequeueIndex + i) % types.length].name();
+
+                if (!tasksQueues.get(type).isEmpty()) {
+                    mr = tasksQueues.get(type).pop();
+                    if (mr.guard()) {
+//                        System.out.println("checkAndDequeue : after guard");
+                        typeToCond.get(mr.getType()).signal();
+                        currentToDequeueIndex += (i + 1);
+                        currentToDequeueIndex %= types.length;
+                        lock.unlock();
+                        return mr;
+
+                    } else {
+                        tasksQueues.get(type).addFirst(mr);
+                    }
                 }
                 i++;
             }
             i = 0;
             try {
-                System.out.println("empty");
+                System.out.println("queues empty or cannot execute : none of requests meet requirements");
                 cond.await();
+//                System.out.println("wakes up after empty\n" + ("*".repeat(50) + "\n").repeat(10));
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+
         }
     }
 
-    public void enqueueBack(MethodRequest mr) {
-        lock.lock();
-        String type = mr.getType();
-        tasksQueues.get(type).addFirst(mr);
-
-        int currentIndexOfGuardLastFailure = typeToIndex.get(mr.getType());
-        if (currentIndexOfGuardLastFailure == lastIndexOfGuardFailure) {
-            try {
-                System.out.println("cond enqueue back and wait ,,,," + getState());
-                cond.await();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        } else {
-            lastIndexOfGuardFailure = currentIndexOfGuardLastFailure;
-        }
-
-        lock.unlock();
-    }
 
     public void enqueue(MethodRequest mr) {
         lock.lock();
-        while (tasksQueues.get(mr.getType()).size() >= oneQueueSizeBound)
+        while (tasksQueues.get(mr.getType()).size() >= oneQueueSizeBound) {
             try {
                 typeToCond.get(mr.getType()).await();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-
+        }
         tasksQueues.get(mr.getType()).addLast(mr);
+//        System.out.println("enqueue: signal " + mr.getType());
         cond.signal();
         lock.unlock();
-
     }
 
 

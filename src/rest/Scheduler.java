@@ -10,16 +10,11 @@ public class Scheduler {
     public Scheduler() {
         schedulerThread = new Thread(() -> {
             while (!end) {
-                MethodRequest mr = tasksQueue.dequeue();
-                System.out.println(tasksQueue.getState());
-                if (mr.guard()) {
-                    System.out.println("scheduler: execute");
-                    mr.execute();
-                }
-                else {
-                    System.out.println("scheduler: enqueue back");
-                    tasksQueue.enqueueBack(mr);
-                }
+//                System.out.println("scheduler");
+                MethodRequest mr = tasksQueue.checkAndDequeue();
+//                System.out.println(tasksQueue.getState());
+                mr.execute();
+
             }
         });
         schedulerThread.start();
@@ -29,4 +24,8 @@ public class Scheduler {
         tasksQueue.enqueue(mr);
     }
 
+
+    public ActivationQueue getTasksQueue() {
+        return tasksQueue;
+    }
 }
