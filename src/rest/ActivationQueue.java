@@ -60,6 +60,7 @@ public class ActivationQueue {
         }
     }
 
+    // method check and/or invoke await until find appropriate MethodRequest and return it
     private MethodRequest checkEachQueue() {
         int i = 0;
         String type;

@@ -9,6 +9,7 @@ public class Scheduler {
 
     public Scheduler() {
         schedulerThread = new Thread(() -> {
+            /* guard invocation inside checkAndDequeue*/
             while (!end) {
                 MethodRequest mr = tasksQueue.checkAndDequeue();
                 mr.execute();
