@@ -13,7 +13,6 @@ import rest.Proxy.reqTypes;
 public class ActivationQueue {
     static private final int oneQueueSizeBound = 512;
     private final reqTypes[] types;
-    private final HashMap<String, Integer> typeToIndex;
     private final HashMap<String, LinkedList<MethodRequest>> tasksQueues;
 
     private final Lock lock = new ReentrantLock();
@@ -21,70 +20,93 @@ public class ActivationQueue {
     private final HashMap<String, Condition> typeToCond;
 
     private int currentToDequeueIndex = 0;
-    private int lastIndexOfGuardFailure = -1;
+
+    private boolean flagEmpty = true;
 
     public ActivationQueue() {
         types = reqTypes.values();
-        typeToIndex = new HashMap<>();
         tasksQueues = new HashMap<>();
         typeToCond = new HashMap<>();
 
         int i=0;
         for (reqTypes t : types) {
             tasksQueues.put(t.name(), new LinkedList<>());
-            typeToIndex.put(t.name(), i);
             typeToCond.put(t.name(), lock.newCondition());
             i++;
         }
     }
 
-    public String getState() {
+    @Override
+    public String toString() {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("ActivationQueue< ");
         for (reqTypes t : types) {
             stringBuilder.append(t.name()).append("::").append(tasksQueues.get(t.name()).size()).append(", ");
         }
-        stringBuilder.append(">\n");
         return stringBuilder.toString();
     }
 
     public MethodRequest checkAndDequeue() {
         lock.lock();
-        int i = 0;
         MethodRequest mr;
-        String type;
+
         while (true) {
-            while (i < types.length) {
-//                System.out.println("checkAndDequeue: i=" + i + " currI: " + currentToDequeueIndex + "  actQ" + getState());
-                type = types[(currentToDequeueIndex + i) % types.length].name();
-
-                if (!tasksQueues.get(type).isEmpty()) {
-                    mr = tasksQueues.get(type).pop();
-                    if (mr.guard()) {
-//                        System.out.println("checkAndDequeue : after guard");
-                        typeToCond.get(mr.getType()).signal();
-                        currentToDequeueIndex += (i + 1);
-                        currentToDequeueIndex %= types.length;
-                        lock.unlock();
-                        return mr;
-
-                    } else {
-                        tasksQueues.get(type).addFirst(mr);
-                    }
-                }
-                i++;
+            mr = checkEachQueue();
+            if (mr != null) {
+                lock.unlock();
+                return mr;
             }
-            i = 0;
-            try {
-                System.out.println("queues empty or cannot execute : none of requests meet requirements");
-                cond.await();
-//                System.out.println("wakes up after empty\n" + ("*".repeat(50) + "\n").repeat(10));
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
+            waitIfEmptyOrNothingExecutable();
         }
     }
+
+    private MethodRequest checkEachQueue() {
+        int i = 0;
+        String type;
+        MethodRequest mr;
+        LinkedList<MethodRequest> currentQueue;
+
+        while (i < types.length) {
+            type = types[(currentToDequeueIndex + i) % types.length].name();
+            currentQueue = tasksQueues.get(type);
+
+            if (!currentQueue.isEmpty()) {
+                flagEmpty = false;
+                mr = currentQueue.getFirst();
+                if (mr.guard()) {
+                    typeToCond.get(mr.getType()).signal();
+                    currentToDequeueIndex += (i + 1);
+                    currentToDequeueIndex %= types.length;
+                    return currentQueue.pop();
+                }
+            }
+            i++;
+        }
+        return null;
+    }
+
+    private void waitIfEmptyOrNothingExecutable() {
+        try {
+            if (flagEmpty)
+                System.out.println("queues are empty");
+            else
+                System.out.println("cannot execute : none of requests meet requirements");
+            cond.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
 
 
     public void enqueue(MethodRequest mr) {
@@ -97,7 +119,6 @@ public class ActivationQueue {
             }
         }
         tasksQueues.get(mr.getType()).addLast(mr);
-//        System.out.println("enqueue: signal " + mr.getType());
         cond.signal();
         lock.unlock();
     }

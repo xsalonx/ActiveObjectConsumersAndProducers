@@ -58,17 +58,17 @@ public class Space {
 
                     if (role.equals("producer")) {
                         data = genRandData();
-                        System.out.println("producer " + index + " size: " + data.length + " " + Arrays.toString(data));
+//                        System.out.println("producer " + index + " size: " + data.length + " " + Arrays.toString(data));
                         Future<int[]> future = proxy.putData(data);
 //                        future.waitForResult();
 //                        System.out.println("producer " + index + " :: done");
 
                     } else if (role.equals("consumer")) {
                         size = getRandSize();
-                        System.out.println("consumer " + index + " size: " + size);
+//                        System.out.println("consumer " + index + " size: " + size);
                         Future<int[]> future = proxy.takeData(size);
-                        data = future.get();
-                        System.out.println("consumer " + index + " :: " + Arrays.toString(data));
+//                        data = future.get();
+//                        System.out.println("consumer " + index + " :: " + Arrays.toString(data));
 
                     } else {
                         throw new IllegalArgumentException("Incorrect role for worker");
@@ -172,7 +172,7 @@ public class Space {
                     pseudoCond.notifyAll_();
                     break;
                 case "queues":
-                    System.out.println(activationQueue.getState());
+                    System.out.println(activationQueue);
                     break;
                 case "state":
                     System.out.println(servant.toStringBufferState());

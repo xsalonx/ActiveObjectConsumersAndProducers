@@ -10,11 +10,8 @@ public class Scheduler {
     public Scheduler() {
         schedulerThread = new Thread(() -> {
             while (!end) {
-//                System.out.println("scheduler");
                 MethodRequest mr = tasksQueue.checkAndDequeue();
-//                System.out.println(tasksQueue.getState());
                 mr.execute();
-
             }
         });
         schedulerThread.start();
