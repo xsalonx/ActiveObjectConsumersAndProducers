@@ -11,6 +11,10 @@ public class Scheduler {
         schedulerThread = new Thread(() -> {
             while (!end) {
                 MethodRequest mr = tasksQueue.checkAndDequeue();
+                if (mr.guard())
+                    mr.execute();
+                else
+                    tasksQueue.enqueueBack(mr);
                 mr.execute();
             }
         });

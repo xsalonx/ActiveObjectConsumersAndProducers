@@ -11,7 +11,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import rest.Proxy.reqTypes;
 
 public class ActivationQueue {
-    static private final int oneQueueSizeBound = 512;
+    static private final int oneQueueSizeBound = 128;
     private final reqTypes[] types;
     private final HashMap<String, LinkedList<MethodRequest>> tasksQueues;
 
@@ -73,12 +73,11 @@ public class ActivationQueue {
             if (!currentQueue.isEmpty()) {
                 flagEmpty = false;
                 mr = currentQueue.getFirst();
-                if (mr.guard()) {
-                    typeToCond.get(mr.getType()).signal();
-                    currentToDequeueIndex += (i + 1);
-                    currentToDequeueIndex %= types.length;
-                    return currentQueue.pop();
-                }
+                typeToCond.get(mr.getType()).signal();
+                currentToDequeueIndex += (i + 1);
+                currentToDequeueIndex %= types.length;
+                return currentQueue.pop();
+
             }
             i++;
         }
@@ -97,17 +96,11 @@ public class ActivationQueue {
         }
     }
 
-
-
-
-
-
-
-
-
-
-
-
+    public void enqueueBack(MethodRequest mr) {
+        lock.lock();
+        tasksQueues.get(mr.getType()).addFirst(mr);
+        lock.unlock();
+    }
 
     public void enqueue(MethodRequest mr) {
         lock.lock();
@@ -122,6 +115,7 @@ public class ActivationQueue {
         cond.signal();
         lock.unlock();
     }
+
 
 
 }
