@@ -77,8 +77,8 @@ public class ActivationQueue {
                 currentToDequeueIndex += (i + 1);
                 currentToDequeueIndex %= types.length;
                 return currentQueue.pop();
-
             }
+
             i++;
         }
         return null;
