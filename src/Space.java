@@ -174,7 +174,7 @@ public class Space {
                 case "queues":
                     System.out.println(activationQueue);
                     break;
-                case "state":
+                case "buffer":
                     System.out.println(servant.toStringBufferState());
                     break;
             }
