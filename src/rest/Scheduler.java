@@ -11,13 +11,13 @@ public class Scheduler {
     public Scheduler() {
         schedulerThread = new Thread(() -> {
             while (!end) {
-                passOverAllTypes();
+                passOverAllReqTypes();
             }
         });
         schedulerThread.start();
     }
 
-    private void passOverAllTypes() {
+    private void passOverAllReqTypes() {
         int i = 0;
 
         while (i < typesNumber) {

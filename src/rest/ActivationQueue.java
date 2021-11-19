@@ -12,24 +12,23 @@ import rest.Proxy.reqTypes;
 
 public class ActivationQueue {
     static private final int oneQueueSizeBound = 128;
-    private final reqTypes[] types;
+    static private final reqTypes[] mrTypes = reqTypes.values();
     private final HashMap<String, LinkedList<MethodRequest>> tasksQueues;
 
     private final Lock lock = new ReentrantLock();
     private final Condition cond = lock.newCondition();
-    private final HashMap<String, Condition> typeToCond;
+    private final HashMap<String, Condition> mrTypeToCond;
 
     private int currentToDequeueIndex = 0;
 
 
     public ActivationQueue() {
-        types = reqTypes.values();
         tasksQueues = new HashMap<>();
-        typeToCond = new HashMap<>();
+        mrTypeToCond = new HashMap<>();
 
-        for (reqTypes t : types) {
+        for (reqTypes t : mrTypes) {
             tasksQueues.put(t.name(), new LinkedList<>());
-            typeToCond.put(t.name(), lock.newCondition());
+            mrTypeToCond.put(t.name(), lock.newCondition());
         }
     }
 
@@ -37,11 +36,12 @@ public class ActivationQueue {
     public String toString() {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("ActivationQueue< ");
-        for (reqTypes t : types) {
+        for (reqTypes t : mrTypes) {
             stringBuilder.append(t.name()).append("::").append(tasksQueues.get(t.name()).size()).append(", ");
         }
         return stringBuilder.toString();
     }
+
 
     public MethodRequest dequeue() {
         lock.lock();
@@ -59,19 +59,19 @@ public class ActivationQueue {
 
     private MethodRequest checkEachQueue() {
         int i = 0;
-        String type;
+        String mrType;
         MethodRequest mr;
         LinkedList<MethodRequest> currentQueue;
 
-        while (i < types.length) {
-            type = types[(currentToDequeueIndex + i) % types.length].name();
-            currentQueue = tasksQueues.get(type);
+        while (i < mrTypes.length) {
+            mrType = mrTypes[(currentToDequeueIndex + i) % mrTypes.length].name();
+            currentQueue = tasksQueues.get(mrType);
 
             if (!currentQueue.isEmpty()) {
                 mr = currentQueue.getFirst();
-                typeToCond.get(mr.getType()).signal();
+                mrTypeToCond.get(mr.getType()).signal();
                 currentToDequeueIndex += (i + 1);
-                currentToDequeueIndex %= types.length;
+                currentToDequeueIndex %= mrTypes.length;
                 return currentQueue.pop();
             }
 
@@ -109,7 +109,7 @@ public class ActivationQueue {
         lock.lock();
         while (tasksQueues.get(mr.getType()).size() >= oneQueueSizeBound) {
             try {
-                typeToCond.get(mr.getType()).await();
+                mrTypeToCond.get(mr.getType()).await();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
