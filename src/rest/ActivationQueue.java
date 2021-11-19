@@ -53,7 +53,7 @@ public class ActivationQueue {
                 lock.unlock();
                 return mr;
             }
-            waitIfEmpty();
+            waitEmpty();
         }
     }
 
@@ -80,7 +80,7 @@ public class ActivationQueue {
         return null;
     }
 
-    public void waitIfNoneExecutable() {
+    public void waitNoneExecutable() {
         lock.lock();
         try {
             System.out.println("cannot execute : none of requests meet requirements");
@@ -90,7 +90,7 @@ public class ActivationQueue {
         }
     }
 
-    public void waitIfEmpty() {
+    public void waitEmpty() {
         try {
             System.out.println("queues are empty");
             cond.await();
