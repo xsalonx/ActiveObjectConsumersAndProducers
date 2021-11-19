@@ -1,5 +1,6 @@
 
 import rest.*;
+import timeMeasure.OtherWorkersCalculations;
 import timeMeasure.TimeMeter;
 
 import java.io.BufferedWriter;
@@ -73,7 +74,10 @@ public class Space {
                         size = getRandSize();
                         start = System.nanoTime();
                         Future<int[]> future = proxy.takeData(size);
-                        data = future.get();
+
+                        OtherWorkersCalculations.cNotRequiringFuture(1000);
+                        OtherWorkersCalculations.cRequiringFuture(100, future);
+
                         end = System.nanoTime();
                         timeMeter.logConsumerTime(index, end - start);
 //                        System.out.println("consumer " + index + " :: " + Arrays.toString(data));
