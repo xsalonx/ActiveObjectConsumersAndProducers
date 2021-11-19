@@ -1,9 +1,7 @@
 
 import rest.*;
 
-import java.lang.reflect.Array;
 import java.util.Arrays;
-import java.util.ConcurrentModificationException;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -58,14 +56,14 @@ public class Space {
 
                     if (role.equals("producer")) {
                         data = genRandData();
-//                        System.out.println("producer " + index + " size: " + data.length + " " + Arrays.toString(data));
+                        System.out.println("producer " + index + " size: " + data.length + " " + Arrays.toString(data));
                         Future<int[]> future = proxy.putData(data);
 //                        future.waitForResult();
 //                        System.out.println("producer " + index + " :: done");
 
                     } else if (role.equals("consumer")) {
                         size = getRandSize();
-//                        System.out.println("consumer " + index + " size: " + size);
+                        System.out.println("consumer " + index + " size: " + size);
                         Future<int[]> future = proxy.takeData(size);
 //                        data = future.get();
 //                        System.out.println("consumer " + index + " :: " + Arrays.toString(data));
@@ -175,7 +173,7 @@ public class Space {
                     System.out.println(activationQueue);
                     break;
                 case "buffer":
-                    System.out.println(servant.toStringBufferState());
+                    System.out.println(servant);
                     break;
             }
         }
