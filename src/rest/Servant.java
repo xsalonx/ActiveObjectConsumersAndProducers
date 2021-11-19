@@ -2,7 +2,7 @@ package rest;
 
 public class Servant {
 
-    private int[] buffer;
+    private final int[] buffer;
 
     int currentSize = 0;
     int putIndex = 0;
@@ -12,7 +12,8 @@ public class Servant {
         this.buffer = new int[size];
     }
 
-    public String toStringBufferState() {
+    @Override
+    public String toString() {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append('[');
         if (putIndex < takeIndex || currentSize == buffer.length) {
@@ -32,7 +33,7 @@ public class Servant {
         return stringBuilder.toString();
     }
     public void printBufferState() {
-        System.out.println(toStringBufferState());
+        System.out.println(toString());
     }
 
     public int getCurrentSize() {
@@ -47,8 +48,6 @@ public class Servant {
             buffer[(putIndex + i) % buffer.length] = data[i];
         putIndex = (putIndex + data.length) % buffer.length;
         currentSize += data.length;
-
-//        printBufferState();
     }
 
     public int[] takeData(int size) {
@@ -57,8 +56,6 @@ public class Servant {
             data[i] = buffer[(takeIndex + i) % buffer.length];
         takeIndex = (takeIndex + size) % buffer.length;
         currentSize -= size;
-
-//        printBufferState();
         return data;
     }
 

@@ -1,9 +1,7 @@
 
 import rest.*;
 
-import java.lang.reflect.Array;
 import java.util.Arrays;
-import java.util.ConcurrentModificationException;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -175,7 +173,7 @@ public class Space {
                     System.out.println(activationQueue);
                     break;
                 case "buffer":
-                    System.out.println(servant.toStringBufferState());
+                    System.out.println(servant);
                     break;
             }
         }

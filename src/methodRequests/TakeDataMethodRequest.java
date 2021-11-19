@@ -4,6 +4,7 @@ import rest.Future;
 import rest.Proxy;
 import rest.Servant;
 
+
 public class TakeDataMethodRequest implements MethodRequest {
     private final int size;
     private final Servant servant;

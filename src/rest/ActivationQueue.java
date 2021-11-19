@@ -11,7 +11,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import rest.Proxy.reqTypes;
 
 public class ActivationQueue {
-    static private final int oneQueueSizeBound = 128;
+    static private final int oneQueueSizeBound = 32;
     private final reqTypes[] types;
     private final HashMap<String, LinkedList<MethodRequest>> tasksQueues;
 
@@ -28,11 +28,9 @@ public class ActivationQueue {
         tasksQueues = new HashMap<>();
         typeToCond = new HashMap<>();
 
-        int i=0;
         for (reqTypes t : types) {
             tasksQueues.put(t.name(), new LinkedList<>());
             typeToCond.put(t.name(), lock.newCondition());
-            i++;
         }
     }
 
@@ -46,7 +44,7 @@ public class ActivationQueue {
         return stringBuilder.toString();
     }
 
-    public MethodRequest checkAndDequeue() {
+    public MethodRequest dequeue() {
         lock.lock();
         MethodRequest mr;
 
@@ -56,7 +54,7 @@ public class ActivationQueue {
                 lock.unlock();
                 return mr;
             }
-            waitIfEmptyOrNothingExecutable();
+            waitIfEmpty();
         }
     }
 
@@ -84,7 +82,20 @@ public class ActivationQueue {
         return null;
     }
 
-    private void waitIfEmptyOrNothingExecutable() {
+    public void waitIfNoneExecutable() {
+        lock.lock();
+        try {
+            if (flagEmpty)
+                System.out.println("queues are empty");
+            else
+                System.out.println("cannot execute : none of requests meet requirements");
+            cond.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void waitIfEmpty() {
         try {
             if (flagEmpty)
                 System.out.println("queues are empty");
