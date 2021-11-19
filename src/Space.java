@@ -1,6 +1,10 @@
 
 import rest.*;
+import timeMeasure.TimeMeter;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.Scanner;
@@ -50,22 +54,28 @@ public class Space {
         public void run() throws IllegalArgumentException {
             int[] data;
             int size;
+            float start, end;
+
             while (!pseudoCond.end) {
                 sleep(workersDelay);
                 if (!pseudoCond.stop) {
 
                     if (role.equals("producer")) {
                         data = genRandData();
-//                        System.out.println("producer " + index + " size: " + data.length + " " + Arrays.toString(data));
+                        start = System.nanoTime();
                         Future<int[]> future = proxy.putData(data);
-//                        future.waitForResult();
+                        future.waitForResult();
+                        end = System.nanoTime();
+                        timeMeter.logProducerTime(index, end - start);
 //                        System.out.println("producer " + index + " :: done");
 
                     } else if (role.equals("consumer")) {
                         size = getRandSize();
-//                        System.out.println("consumer " + index + " size: " + size);
+                        start = System.nanoTime();
                         Future<int[]> future = proxy.takeData(size);
-//                        data = future.get();
+                        data = future.get();
+                        end = System.nanoTime();
+                        timeMeter.logConsumerTime(index, end - start);
 //                        System.out.println("consumer " + index + " :: " + Arrays.toString(data));
 
                     } else {
@@ -98,6 +108,7 @@ public class Space {
     static private Proxy proxy;
     static private ActivationQueue activationQueue;
 
+    static private TimeMeter timeMeter;
 
     public static void main(String[] args) {
 
@@ -105,8 +116,8 @@ public class Space {
          * set of parameters
          * */
 
-        producersNumb = 250;
-        consumersNumb = 250;
+        producersNumb = 20;
+        consumersNumb = 15;
         bufferSize = 100;
         dataSizeUpperBound_1 = 40;
         dataSizeLowerBound_1 = 1;
@@ -136,11 +147,15 @@ public class Space {
         Thread[] producersThreads = declareWorkersThreads(producers);
         Thread[] consumersThreads = declareWorkersThreads(consumers);
 
+        timeMeter = new TimeMeter(producersNumb, consumersNumb, producersThreads, consumersThreads);
+
         startThreads(producersThreads);
         startThreads(consumersThreads);
 
 
-        runCLI();
+        try {
+            runCLI();
+        } catch (IOException ignore ){}
 
         System.out.println("out of loop");
         pseudoCond.end = true;
@@ -152,9 +167,11 @@ public class Space {
         System.out.println("Producers joined");
     }
 
-    private static void runCLI() {
+    private static void runCLI() throws IOException {
         Scanner scanner = new Scanner(System.in);
         String input = "";
+        BufferedWriter writer = new BufferedWriter(new FileWriter("res.txt", true));
+
         while (!input.equals("end")) {
             input = scanner.nextLine();
             System.out.println("command: <" + input + ">");
@@ -169,11 +186,17 @@ public class Space {
                     pseudoCond.stop = false;
                     pseudoCond.notifyAll_();
                     break;
+                case "state":
+                    System.out.println(timeMeter.toStringTimes());
+                    break;
                 case "queues":
                     System.out.println(activationQueue);
                     break;
                 case "buffer":
                     System.out.println(servant);
+                    break;
+                case "save":
+                    writer.write(timeMeter.toStringTimes().replaceAll("\u001B\\[[;\\d]*m", ""));
                     break;
             }
         }

@@ -83,7 +83,7 @@ public class ActivationQueue {
     public void waitIfNoneExecutable() {
         lock.lock();
         try {
-            System.out.println("cannot execute : none of requests meet requirements");
+//            System.out.println("cannot execute : none of requests meet requirements");
             cond.await();
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -92,7 +92,7 @@ public class ActivationQueue {
 
     public void waitIfEmpty() {
         try {
-            System.out.println("queues are empty");
+//            System.out.println("queues are empty");
             cond.await();
         } catch (InterruptedException e) {
             e.printStackTrace();
