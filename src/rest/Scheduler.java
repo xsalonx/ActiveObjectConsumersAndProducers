@@ -31,7 +31,7 @@ public class Scheduler {
                 i++;
             }
         }
-        tasksQueue.waitIfNoneExecutable();
+        tasksQueue.wait_();
     }
 
     public void enqueue(MethodRequest mr) {

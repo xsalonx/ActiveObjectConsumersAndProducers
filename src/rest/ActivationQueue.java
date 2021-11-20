@@ -42,25 +42,26 @@ public class ActivationQueue {
         return stringBuilder.toString();
     }
 
+    private boolean isEmpty() {
+        boolean isEmpty = true;
+        for (LinkedList<MethodRequest> l : tasksQueues.values()) {
+            isEmpty = isEmpty && l.isEmpty();
+        }
+        return isEmpty;
+    }
+
 
     public MethodRequest dequeue() {
         lock.lock();
-        MethodRequest mr;
-
-        while (true) {
-            mr = checkEachQueue();
-            if (mr != null) {
-                lock.unlock();
-                return mr;
-            }
-            waitIfEmpty();
-        }
+        if (isEmpty())
+            wait_();
+        return popFromOneQueue();
     }
 
-    private MethodRequest checkEachQueue() {
+    private MethodRequest popFromOneQueue() {
         int i = 0;
         String mrType;
-        MethodRequest mr;
+        MethodRequest mr = null;
         LinkedList<MethodRequest> currentQueue;
 
         while (i < mrTypes.length) {
@@ -72,27 +73,18 @@ public class ActivationQueue {
                 mrTypeToCond.get(mr.getType()).signal();
                 currentToDequeueIndex += (i + 1);
                 currentToDequeueIndex %= mrTypes.length;
-                return currentQueue.pop();
+                mr = currentQueue.pop();
+                break;
             }
 
             i++;
         }
-        return null;
+        return mr;
     }
 
-    public void waitIfNoneExecutable() {
-        lock.lock();
-        try {
-//            System.out.println("cannot execute : none of requests meet requirements");
-            cond.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
 
-    public void waitIfEmpty() {
+    public void wait_() {
         try {
-//            System.out.println("queues are empty");
             cond.await();
         } catch (InterruptedException e) {
             e.printStackTrace();

@@ -65,22 +65,22 @@ public class Space {
                         data = genRandData();
                         start = System.nanoTime();
                         Future<int[]> future = proxy.putData(data);
-                        future.waitForResult();
+//                        future.waitForResult();
                         end = System.nanoTime();
                         timeMeter.logProducerTime(index, end - start);
-//                        System.out.println("producer " + index + " :: done");
+                        System.out.println("producer " + index + " :: done");
 
                     } else if (role.equals("consumer")) {
                         size = getRandSize();
                         start = System.nanoTime();
                         Future<int[]> future = proxy.takeData(size);
 
-                        OtherWorkersCalculations.cNotRequiringFuture(1000);
+                        OtherWorkersCalculations.notRequiringFuture(1000);
                         OtherWorkersCalculations.cRequiringFuture(100, future);
 
                         end = System.nanoTime();
                         timeMeter.logConsumerTime(index, end - start);
-//                        System.out.println("consumer " + index + " :: " + Arrays.toString(data));
+                        System.out.println("consumer " + index + " :: " + Arrays.toString(future.get()));
 
                     } else {
                         throw new IllegalArgumentException("Incorrect role for worker");

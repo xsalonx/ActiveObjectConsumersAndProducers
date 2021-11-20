@@ -18,7 +18,7 @@ public class OtherWorkersCalculations {
                 tmp[j] = fGet[j] + Math.sin(tmp[j] + Math.exp(tmp[j]));
         }
     }
-    static public void cNotRequiringFuture(int n) {
+    static public void notRequiringFuture(int n) {
         double tmp = 0;
         for (int i=0; i<n; i++) {
             tmp = Math.sin(tmp + Math.exp(tmp));
