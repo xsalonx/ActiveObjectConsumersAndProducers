@@ -42,9 +42,18 @@ public class ActivationQueue {
         return stringBuilder.toString();
     }
 
+    private boolean isEmpty() {
+        boolean isEmpty = true;
+        for (LinkedList<MethodRequest> l : tasksQueues.values()) {
+            isEmpty = isEmpty && l.isEmpty();
+        }
+        return isEmpty;
+    }
+
 
     public MethodRequest dequeue() {
         lock.lock();
+<<<<<<< HEAD:src/rest/ActivationQueue.java
         MethodRequest mr;
 
         while (true) {
@@ -55,12 +64,17 @@ public class ActivationQueue {
             }
             waitEmpty();
         }
+=======
+        if (isEmpty())
+            wait_();
+        return popFromOneQueue();
+>>>>>>> timeMeter:src/main/java/rest/ActivationQueue.java
     }
 
-    private MethodRequest checkEachQueue() {
+    private MethodRequest popFromOneQueue() {
         int i = 0;
         String mrType;
-        MethodRequest mr;
+        MethodRequest mr = null;
         LinkedList<MethodRequest> currentQueue;
 
         while (i < mrTypes.length) {
@@ -72,14 +86,16 @@ public class ActivationQueue {
                 mrTypeToCond.get(mr.getType()).signal();
                 currentToDequeueIndex += (i + 1);
                 currentToDequeueIndex %= mrTypes.length;
-                return currentQueue.pop();
+                mr = currentQueue.pop();
+                break;
             }
 
             i++;
         }
-        return null;
+        return mr;
     }
 
+<<<<<<< HEAD:src/rest/ActivationQueue.java
     public void waitNoneExecutable() {
         lock.lock();
         try {
@@ -91,8 +107,11 @@ public class ActivationQueue {
     }
 
     public void waitEmpty() {
+=======
+
+    public void wait_() {
+>>>>>>> timeMeter:src/main/java/rest/ActivationQueue.java
         try {
-            System.out.println("queues are empty");
             cond.await();
         } catch (InterruptedException e) {
             e.printStackTrace();

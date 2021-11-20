@@ -31,7 +31,11 @@ public class Scheduler {
                 i++;
             }
         }
+<<<<<<< HEAD:src/rest/Scheduler.java
         tasksQueue.waitNoneExecutable();
+=======
+        tasksQueue.wait_();
+>>>>>>> timeMeter:src/main/java/rest/Scheduler.java
     }
 
     public void enqueue(MethodRequest mr) {
